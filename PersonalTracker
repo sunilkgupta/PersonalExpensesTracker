@@ -1,0 +1,121 @@
+    
+def add_expense(expenses):
+    from datetime import datetime
+    date = input("Enter date (YYYY-MM-DD): ")
+    category = input('Enter category as "Food" or "Travel"')
+    try:
+        amount = float(input("Enter amount: "))
+    except ValueError:
+        print("Invalid amount. Please try again!")
+        return
+    description = input("Enter short description: ")
+    
+    try:
+        datetime.strptime(date, "%Y-%m-%d")
+    except ValueError:
+        print("Invalid date format. Use YYYY-MM-DD.")
+        return
+    
+    expense = {
+        "date": date, 
+        "category": category, 
+        "amount" : amount, 
+        "description": description
+    }
+    expenses.append(expense)
+    print("Successfully, expense added.")
+
+
+import csv
+
+def save_expenses(expenses, filename="expenses.csv"):
+    with open(filename, "w", newline="") as file:
+        writer = csv.DictWriter(file, fieldnames=["date", "category", "amount", "description"])
+        writer.writeheader()
+        writer.writerows(expenses)
+    print("Expenses saved successfully.")
+
+def load_expenses(filename="expenses.csv"):
+    expenses = []
+    try:
+        with open(filename, newline="") as file:
+            reader = csv.DictReader(file)
+            for i, row in enumerate(reader, 1):
+                # Check if all required keys are present
+                if all(k in row and row[k] for k in ["date", "category", "amount", "description"]):
+                    try:
+                        row["amount"] = float(row["amount"])
+                        expenses.append(row)
+                    except ValueError:
+                        print(f"⚠️ Skipping row {i}: Invalid amount.")
+                else:
+                    print(f"⚠️ Skipping row {i}: Missing one or more required fields.")
+    except FileNotFoundError:
+        print("No previous expense file found. Starting fresh.")
+    return expenses
+
+
+def view_expenses(expenses):
+    if not expenses:
+        print("No expenses recorded yet.")
+        return
+    print("\nYour Expenses")
+    for exp in expenses:
+        if  all(k in exp for k in ("date", "category", "amount", "description")):
+            print(f"{exp['date']} | {exp['category']} | {exp['amount']} | {exp['description']}")
+        else:
+            print("Skipping incomplete record.")
+
+
+def set_budget():
+    try:
+        return float(input("Enter your monthly budget"))
+    except ValueError:
+        print("Invalid amount. Try again.")
+        return set_budget()
+
+
+def track_budget(expenses, budget):
+    total_spent = sum(exp["amount"] for exp in expenses)
+    print(f"\nTotal spent so far: {total_spent}")
+    
+    if total_spent > budget:
+        print("⚠️ You have exceeded your budget!")
+    else:
+        print(f"You have {budget - total_spent} left for the month.")
+
+
+def menu():
+    expenses = load_expenses()
+    budget = 0
+
+    while True:
+        print("\n--- Personal Expense Tracker ---")
+        print("1. Add expense")
+        print("2. View expenses")
+        print("3. Track budget")
+        print("4. Save expenses")
+        print("5. Exit")
+
+        choice = input("Enter your choice (1-5): ")
+
+        if choice == "1":
+            add_expense(expenses)
+        elif choice == "2":
+            view_expenses(expenses)
+        elif choice == "3":
+            if budget == 0:
+                budget = set_budget()
+            track_budget(expenses, budget)
+        elif choice == "4":
+            save_expenses(expenses)
+        elif choice == "5":
+            save_expenses(expenses)
+            print("Leaving. Bye!")
+            break
+        else:
+            print("Invalid choice. Try again.")
+
+
+if __name__ == "__main__":
+    menu()
